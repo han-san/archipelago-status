@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import { Client, Hint } from "archipelago.js";
+import { Spinner } from "@heroui/react";
 
 type PlayerInfo = {
   client: Client;
@@ -48,6 +49,7 @@ function App() {
   const [connectedClients, setConnectedClients] = useState(
     new Map<string, PlayerInfo>(),
   );
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const classProgression = "hint-progression";
   const classUseful = "hint-useful";
@@ -107,6 +109,8 @@ function App() {
   }
 
   async function loginButtonOnClick() {
+    setIsConnecting(true);
+
     const loginPlayerNameInput = document.getElementById(
       "login-player-name-input",
     ) as HTMLInputElement;
@@ -133,6 +137,7 @@ function App() {
     }
 
     setConnectedClients(newMap);
+    setIsConnecting(false);
   }
 
   const loginFields = (
@@ -166,7 +171,11 @@ function App() {
   return (
     <>
       <h1>Hello test!</h1>
-      {connectedClients.size === 0 ? (
+      {isConnecting ? (
+        <div className="flex place-content-center">
+          <Spinner size="xl" />
+        </div>
+      ) : connectedClients.size === 0 ? (
         loginFields
       ) : (
         <div id="player-list" className="grid grid-cols-3 grid-rows-3">
