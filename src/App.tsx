@@ -106,12 +106,37 @@ function App() {
     );
   }
 
-  return (
+  async function loginButtonOnClick() {
+    const loginPlayerNameInput = document.getElementById(
+      "login-player-name-input",
+    ) as HTMLInputElement;
+    const loginUrlInput = document.getElementById(
+      "login-url-input",
+    ) as HTMLInputElement;
+
+    const url = loginUrlInput.value;
+    const playerName = loginPlayerNameInput.value;
+
+    const clients = new Map<string, PlayerInfo>();
+    const newMap = await login(url, playerName, clients);
+
+    for (const [playerName, info] of newMap) {
+      info.client.items.on("hintReceived", (hint) =>
+        setConnectedClients((oldConnectedClients) => {
+          const newConnectedClients = new Map(oldConnectedClients);
+          newConnectedClients.get(playerName)!.hints.push(hint);
+          return newConnectedClients;
+        }),
+      );
+
+      info.hints = await info.client.players.self.fetchHints();
+    }
+
+    setConnectedClients(newMap);
+  }
+
+  const loginFields = (
     <>
-      <h1>Hello test!</h1>
-      <div id="player-list">
-        {[...connectedClients.values()].map(playerInfoNode)}
-      </div>
       <div>
         <label htmlFor="login-url-input">
           Enter Archipelago server url and port
@@ -131,40 +156,23 @@ function App() {
         ></input>
       </div>
       <div>
-        <button
-          onClick={async () => {
-            const loginPlayerNameInput = document.getElementById(
-              "login-player-name-input",
-            ) as HTMLInputElement;
-            const loginUrlInput = document.getElementById(
-              "login-url-input",
-            ) as HTMLInputElement;
-
-            const url = loginUrlInput.value;
-            const playerName = loginPlayerNameInput.value;
-
-            const clients = new Map<string, PlayerInfo>();
-            const newMap = await login(url, playerName, clients);
-
-            for (const [playerName, info] of newMap) {
-              info.client.items.on("hintReceived", (hint) =>
-                setConnectedClients((oldConnectedClients) => {
-                  const newConnectedClients = new Map(oldConnectedClients);
-                  newConnectedClients.get(playerName)!.hints.push(hint);
-                  return newConnectedClients;
-                }),
-              );
-
-              info.hints = await info.client.players.self.fetchHints();
-            }
-
-            setConnectedClients(newMap);
-          }}
-          id="login-button"
-        >
+        <button onClick={loginButtonOnClick} id="login-button">
           Login
         </button>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      <h1>Hello test!</h1>
+      {connectedClients.size === 0 ? (
+        loginFields
+      ) : (
+        <div id="player-list" className="grid grid-cols-3 grid-rows-3">
+          {[...connectedClients.values()].map(playerInfoNode)}
+        </div>
+      )}
     </>
   );
 }
